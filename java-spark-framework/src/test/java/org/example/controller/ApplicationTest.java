@@ -1,8 +1,9 @@
-package org.example.controller;
+package java.org.example.controller;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.postgresql.ds.PGSimpleDataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -10,8 +11,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
-import org.example.repository.articlerepository.InMemoryArticleRepository;
-import org.example.repository.commentrepository.InMemoryCommentRepository;
+import org.example.controller.ArticleController;
+import org.example.controller.CommentController;
+import org.example.repository.articlerepository.PostgresArticleRepository;
+import org.example.repository.commentrepository.PostgresCommentRepository;
 import org.example.service.ArticleService;
 import org.example.service.CommentService;
 import org.example.template.Application;
@@ -27,10 +30,15 @@ class ApplicationTest {
   @BeforeEach
   void beforeEach() {
     service = Service.ignite().port(PORT);
-    InMemoryArticleRepository inMemoryArticleRepository = new InMemoryArticleRepository();
-    InMemoryCommentRepository inMemoryCommentRepository = new InMemoryCommentRepository();
-    ArticleService articleService = new ArticleService(inMemoryArticleRepository);
-    CommentService commentService = new CommentService(inMemoryCommentRepository, inMemoryArticleRepository);
+    PGSimpleDataSource dataSource = new PGSimpleDataSource();
+    dataSource.setUrl("jdbc:postgresql://localhost:5432/" + System.getenv("POSTGRES_DB"));
+    dataSource.setUser (System.getenv("POSTGRES_USER"));
+    dataSource.setPassword(System.getenv("POSTGRES_PASSWORD"));
+
+    PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource);
+    PostgresCommentRepository inMemoryCommentRepository = new PostgresCommentRepository();
+    ArticleService articleService = new ArticleService(postgresArticleRepository);
+    CommentService commentService = new CommentService(inMemoryCommentRepository);
     ObjectMapper objectMapper = new ObjectMapper();
     Application application = new Application(
         List.of(

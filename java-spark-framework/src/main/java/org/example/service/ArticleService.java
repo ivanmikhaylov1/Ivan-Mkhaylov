@@ -4,9 +4,10 @@ import org.example.entity.Article.Article;
 import org.example.entity.Article.ArticleId;
 import org.example.repository.articlerepository.ArticleRepository;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.Optional;
 
 public class ArticleService {
   private final ArticleRepository articleRepository;
@@ -19,15 +20,12 @@ public class ArticleService {
     return articleRepository.findAll();
   }
 
-  public Article findById(ArticleId articleId) {
+  public Optional<Article> findById(ArticleId articleId) {
     Article article = articleRepository.findById(articleId);
-    if (article == null) {
-      throw new NoSuchElementException("Не удалось найти статью с id=" + articleId);
-    }
-    return article;
+    return Optional.ofNullable(article);
   }
 
-  public Article create(String name, Set<String> tags) {
+  public Article create(String name, LinkedHashSet<String> tags) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("Имя статьи не может быть пустым");
     }
@@ -41,7 +39,7 @@ public class ArticleService {
     return article;
   }
 
-  public void update(ArticleId id, String name, Set<String> tags) {
+  public void update(ArticleId id, String name, LinkedHashSet<String> tags) {
     Article article = articleRepository.findById(id);
     if (article == null) {
       throw new NoSuchElementException("Не удалось найти статью с id=" + id);

@@ -3,7 +3,6 @@ package org.example.service;
 import org.example.entity.Article.ArticleId;
 import org.example.entity.Comment.Comment;
 import org.example.entity.Comment.CommentId;
-import org.example.repository.articlerepository.InMemoryArticleRepository;
 import org.example.repository.commentrepository.CommentRepository;
 
 import java.util.List;
@@ -11,11 +10,9 @@ import java.util.NoSuchElementException;
 
 public class CommentService {
   private final CommentRepository commentRepository;
-  private final InMemoryArticleRepository inMemoryArticleRepository;
 
-  public CommentService(CommentRepository commentRepository, InMemoryArticleRepository inMemoryArticleRepository) {
+  public CommentService(CommentRepository commentRepository) {
     this.commentRepository = commentRepository;
-    this.inMemoryArticleRepository = inMemoryArticleRepository;
   }
 
   public List<Comment> findAll(ArticleId articleId) {

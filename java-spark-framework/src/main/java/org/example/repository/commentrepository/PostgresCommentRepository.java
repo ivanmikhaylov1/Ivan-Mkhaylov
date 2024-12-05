@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class InMemoryCommentRepository implements CommentRepository {
+public class PostgresCommentRepository implements CommentRepository {
   private final Map<ArticleId, Map<CommentId, Comment>> commentsByArticle = new ConcurrentHashMap<>();
   private final AtomicLong commentIdCounter = new AtomicLong(1);
 
@@ -42,7 +42,7 @@ public class InMemoryCommentRepository implements CommentRepository {
 
   @Override
   public CommentId generateCommentId() {
-    return new CommentId(commentIdCounter.getAndIncrement()); // Генерация уникального идентификатора
+    return new CommentId(commentIdCounter.getAndIncrement());
   }
 
   @Override

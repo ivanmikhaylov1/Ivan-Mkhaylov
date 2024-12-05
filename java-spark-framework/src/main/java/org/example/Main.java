@@ -5,27 +5,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.controller.ArticleController;
 import org.example.controller.ArticleFreemarkerController;
 import org.example.controller.CommentController;
-import org.example.repository.articlerepository.InMemoryArticleRepository;
-import org.example.repository.commentrepository.InMemoryCommentRepository;
+import org.example.repository.DataSourceConfig;
+import org.example.repository.articlerepository.PostgresArticleRepository;
+import org.example.repository.commentrepository.PostgresCommentRepository;
 import org.example.service.ArticleService;
 import org.example.service.CommentService;
 import org.example.template.Application;
 import org.example.template.TemplateFactory;
 import spark.Service;
 
+import javax.sql.DataSource;
 import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
-    Service service = Service.ignite().port(1111);
-    service.before((req, res) -> {
-      System.out.println("Request: " + req.requestMethod() + " " + req.uri());
-    });
+    Service service = Service.ignite().port(1235);
+    DataSource dataSource = DataSourceConfig.getDataSource();
     ObjectMapper objectMapper = new ObjectMapper();
-    InMemoryArticleRepository inMemoryArticleRepository = new InMemoryArticleRepository();
-    InMemoryCommentRepository inMemoryCommentRepository = new InMemoryCommentRepository();
-    ArticleService articleService = new ArticleService(inMemoryArticleRepository);
-    CommentService commentService = new CommentService(inMemoryCommentRepository, inMemoryArticleRepository);
+    PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource);
+    PostgresCommentRepository inMemoryCommentRepository = new PostgresCommentRepository();
+    ArticleService articleService = new ArticleService(postgresArticleRepository);
+    CommentService commentService = new CommentService(inMemoryCommentRepository);
     Application application = new Application(
         List.of(
             new ArticleController(

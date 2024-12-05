@@ -16,6 +16,7 @@ import spark.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 public class ArticleController implements Controller {
   private static final Logger LOG = LoggerFactory.getLogger(ArticleController.class);
@@ -80,7 +81,7 @@ public class ArticleController implements Controller {
       response.type("application/json");
       try {
         ArticleId articleId = new ArticleId(Long.parseLong(request.params(":id")));
-        Article article = articleService.findById(articleId);
+        Optional<Article> article = articleService.findById(articleId);
         return objectMapper.writeValueAsString(article);
       } catch (NoSuchElementException e) {
         response.status(404);

@@ -3,7 +3,6 @@ package org.example.template;
 import java.util.List;
 import org.example.controller.Controller;
 
-
 public class Application {
   private final List<Controller> controllers;
 

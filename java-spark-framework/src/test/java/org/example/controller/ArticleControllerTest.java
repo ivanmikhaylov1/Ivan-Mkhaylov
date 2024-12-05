@@ -1,11 +1,13 @@
-package org.example.controller;
+package java.org.example.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.controller.ArticleController;
 import org.example.service.ArticleService;
-import org.example.repository.articlerepository.InMemoryArticleRepository;
+import org.example.repository.articlerepository.PostgresArticleRepository;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.postgresql.ds.PGSimpleDataSource;
 import spark.Service;
 
 import java.io.IOException;
@@ -24,9 +26,10 @@ class ArticleControllerTest {
   @BeforeAll
   static void setup() {
     service = Service.ignite().port(PORT);
+    PGSimpleDataSource dataSource = new PGSimpleDataSource();
     ObjectMapper objectMapper = new ObjectMapper();
-    InMemoryArticleRepository inMemoryArticleRepository = new InMemoryArticleRepository();
-    ArticleService articleService = new ArticleService(inMemoryArticleRepository);
+    PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource);
+    ArticleService articleService = new ArticleService(postgresArticleRepository);
     new ArticleController(service, articleService, objectMapper);
     service.awaitInitialization();
   }
