@@ -15,7 +15,7 @@ public interface CommentRepository {
 
   void delete(ArticleId articleId, CommentId commentId);
 
-  CommentId generateCommentId();
-
   void update(Comment comment);
+
+  CommentId generateCommentId();
 }

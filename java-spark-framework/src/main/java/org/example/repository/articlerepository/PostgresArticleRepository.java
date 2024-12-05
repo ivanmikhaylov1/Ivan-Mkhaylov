@@ -33,7 +33,7 @@ public class PostgresArticleRepository implements ArticleRepository {
     String query = "SELECT * FROM articles WHERE article_id = ?";
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setLong(1, articleId.value());
+      preparedStatement.setLong(5, articleId.value());
       ResultSet resultSet = preparedStatement.executeQuery();
       if (resultSet.next()) {
         return mapRowToArticle(resultSet);
@@ -80,7 +80,7 @@ public class PostgresArticleRepository implements ArticleRepository {
     String query = "DELETE FROM articles WHERE article_id = ?";
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setLong(5, articleId.value());
+      preparedStatement.setLong(1, articleId.value());
       preparedStatement.executeUpdate();
     } catch (SQLException e) {
       logger.error("Error deleting article with ID: {}", articleId.value(), e);
@@ -100,6 +100,36 @@ public class PostgresArticleRepository implements ArticleRepository {
       preparedStatement.executeUpdate();
     } catch (SQLException e) {
       logger.error("Error updating article: {}", article.name(), e);
+    }
+  }
+
+  @Override
+  public void updateTrending(ArticleId articleId) {
+    String selectQuery = "SELECT number_of_comments FROM articles WHERE article_id = ? FOR UPDATE";
+    String updateQuery = "UPDATE articles SET trending = ? WHERE article_id = ?";
+    try (Connection connection = dataSource.getConnection()) {
+      connection.setAutoCommit(false);
+      try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
+        selectStatement.setLong(1, articleId.value());
+        ResultSet resultSet = selectStatement.executeQuery();
+
+        if (resultSet.next()) {
+          int numberOfComments = resultSet.getInt("number_of_comments");
+          boolean trending = numberOfComments > 3;
+
+          try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
+            updateStatement.setBoolean(1, trending);
+            updateStatement.setLong(2, articleId.value());
+            updateStatement.executeUpdate();
+          }
+        }
+        connection.commit();
+      } catch (SQLException e) {
+        connection.rollback();
+        throw new RuntimeException("Error updating trending status", e);
+      }
+    } catch (SQLException e) {
+      logger.error("Error connecting to the database", e);
     }
   }
 

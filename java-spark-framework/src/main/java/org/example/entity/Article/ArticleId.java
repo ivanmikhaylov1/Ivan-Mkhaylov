@@ -1,7 +1,6 @@
 package org.example.entity.Article;
 
 public record ArticleId(long value) {
-
   @Override
   public boolean equals(Object object) {
     if (this == object) return true;
@@ -11,8 +10,6 @@ public record ArticleId(long value) {
 
   @Override
   public String toString() {
-    return "ArticleId{" +
-        "value=" + value +
-        '}';
+    return value + "";
   }
 }

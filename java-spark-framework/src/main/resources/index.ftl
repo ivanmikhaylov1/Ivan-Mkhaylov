@@ -18,7 +18,7 @@
     </tr>
     <#list articles as article>
         <tr>
-            <td>${article.getId!}</td>
+            <td>${article.id!}</td>
             <td>${article.title!}</td>
             <td>${article.number!}</td>
             <td>${article.tags!}</td>

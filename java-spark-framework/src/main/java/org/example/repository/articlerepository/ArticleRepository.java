@@ -17,4 +17,6 @@ public interface ArticleRepository {
   void update(Article article);
 
   ArticleId generateArticleId();
+
+  void updateTrending(ArticleId articleId);
 }
