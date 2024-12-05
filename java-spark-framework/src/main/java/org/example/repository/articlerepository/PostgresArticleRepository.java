@@ -105,22 +105,25 @@ public class PostgresArticleRepository implements ArticleRepository {
 
   @Override
   public void updateTrending(ArticleId articleId) {
-    String selectQuery = "SELECT number_of_comments FROM articles WHERE article_id = ? FOR UPDATE";
-    String updateQuery = "UPDATE articles SET trending = ? WHERE article_id = ?";
+    String selectQuery = "SELECT number_of_comments, version FROM articles WHERE article_id = ?";
+    String updateQuery = "UPDATE articles SET trending = ?, version = version + 1 WHERE article_id = ? AND version = ?";
     try (Connection connection = dataSource.getConnection()) {
       connection.setAutoCommit(false);
       try (PreparedStatement selectStatement = connection.prepareStatement(selectQuery)) {
         selectStatement.setLong(1, articleId.value());
         ResultSet resultSet = selectStatement.executeQuery();
-
         if (resultSet.next()) {
           int numberOfComments = resultSet.getInt("number_of_comments");
+          int currentVersion = resultSet.getInt("version");
           boolean trending = numberOfComments > 3;
-
           try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
             updateStatement.setBoolean(1, trending);
             updateStatement.setLong(2, articleId.value());
-            updateStatement.executeUpdate();
+            updateStatement.setInt(3, currentVersion);
+            int rowsUpdated = updateStatement.executeUpdate();
+            if (rowsUpdated == 0) {
+              throw new RuntimeException("Optimistic locking failed: Article was updated by another transaction.");
+            }
           }
         }
         connection.commit();
@@ -129,9 +132,10 @@ public class PostgresArticleRepository implements ArticleRepository {
         throw new RuntimeException("Error updating trending status", e);
       }
     } catch (SQLException e) {
-      logger.error("Error connecting to the database", e);
+      logger.error("Error connecting to the database for trending update", e);
     }
   }
+
 
   private Article mapRowToArticle(ResultSet resultSet) throws SQLException {
     ArticleId id = new ArticleId(resultSet.getLong("article_id"));
