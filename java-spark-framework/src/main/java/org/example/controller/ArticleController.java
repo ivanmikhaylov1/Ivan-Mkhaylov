@@ -45,6 +45,10 @@ public class ArticleController implements Controller {
     service.post("/api/articles", (Request request, Response response) -> {
       response.type("application/json");
       String body = request.body();
+      if (body == null || body.isBlank()) {
+        response.status(400);
+        return objectMapper.writeValueAsString(new ErrorResponse("Тело запроса не может быть пустым"));
+      }
       try {
         ArticleCreateRequest articleCreateRequest = objectMapper.readValue(body, ArticleCreateRequest.class);
         ArticleId articleId = articleService.create(articleCreateRequest.name(), articleCreateRequest.tags()).id();
@@ -82,10 +86,11 @@ public class ArticleController implements Controller {
       try {
         ArticleId articleId = new ArticleId(Long.parseLong(request.params(":id")));
         Optional<Article> article = articleService.findById(articleId);
-        return objectMapper.writeValueAsString(article);
-      } catch (NoSuchElementException e) {
-        response.status(404);
-        return objectMapper.writeValueAsString(new ErrorResponse(e.getMessage()));
+        if (article.isEmpty()) {
+          response.status(404);
+          return objectMapper.writeValueAsString(new ErrorResponse("Статья не найдена"));
+        }
+        return objectMapper.writeValueAsString(article.get());
       } catch (NumberFormatException e) {
         response.status(400);
         return objectMapper.writeValueAsString(new ErrorResponse("Неверный формат ID"));
@@ -103,6 +108,10 @@ public class ArticleController implements Controller {
       try {
         ArticleId articleId = new ArticleId(Long.parseLong(request.params(":id")));
         String body = request.body();
+        if (body == null || body.isBlank()) {
+          response.status(400);
+          return objectMapper.writeValueAsString(new ErrorResponse("Тело запроса не может быть пустым"));
+        }
         ArticleUpdateRequest articleUpdateRequest = objectMapper.readValue(body, ArticleUpdateRequest.class);
         articleService.update(articleId, articleUpdateRequest.name(), articleUpdateRequest.tags());
         response.status(204);
@@ -124,17 +133,18 @@ public class ArticleController implements Controller {
 
   private void deleteArticle() {
     service.delete("/api/articles/:id", (Request request, Response response) -> {
+      response.type("application/json");
       try {
         ArticleId articleId = new ArticleId(Long.parseLong(request.params(":id")));
         articleService.delete(articleId);
         response.status(204);
         return "";
+      } catch (NumberFormatException e) {
+        response.status(400);
+        return objectMapper.writeValueAsString(new ErrorResponse("Неверный формат ID или версии статьи"));
       } catch (NoSuchElementException e) {
         response.status(404);
         return objectMapper.writeValueAsString(new ErrorResponse(e.getMessage()));
-      } catch (NumberFormatException e) {
-        response.status(400);
-        return objectMapper.writeValueAsString(new ErrorResponse("Неверный формат ID статьи"));
       } catch (Exception e) {
         LOG.error("Неожиданная ошибка при удалении статьи", e);
         response.status(500);

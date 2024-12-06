@@ -8,10 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class PostgresArticleRepository implements ArticleRepository {
@@ -30,10 +27,11 @@ public class PostgresArticleRepository implements ArticleRepository {
 
   @Override
   public Article findById(ArticleId articleId) {
-    String query = "SELECT * FROM articles WHERE article_id = ?";
+    String query = "SELECT * " +
+        "FROM articles WHERE article_id = ?";
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setLong(5, articleId.value());
+      preparedStatement.setLong(1, articleId.value());
       ResultSet resultSet = preparedStatement.executeQuery();
       if (resultSet.next()) {
         return mapRowToArticle(resultSet);
@@ -47,7 +45,8 @@ public class PostgresArticleRepository implements ArticleRepository {
   @Override
   public List<Article> findAll() {
     List<Article> articles = new ArrayList<>();
-    String query = "SELECT * FROM articles";
+    String query = "SELECT * " +
+        "FROM articles";
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query);
          ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -62,13 +61,14 @@ public class PostgresArticleRepository implements ArticleRepository {
 
   @Override
   public void save(Article article) {
-    String query = "INSERT INTO articles (article_name, tags, number_of_comments, trending) VALUES (?, ?, ?, ?)";
+    String query = "INSERT INTO articles (article_name, tags, number_of_comments, trending, version) VALUES (?, ?, ?, ?, ?)";
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
       preparedStatement.setString(1, article.name());
       preparedStatement.setString(2, String.join(",", article.tags()));
       preparedStatement.setInt(3, article.comments().size());
       preparedStatement.setBoolean(4, article.comments().size() >= 3);
+      preparedStatement.setInt(5, 0);
       preparedStatement.executeUpdate();
     } catch (SQLException e) {
       logger.error("Error saving article: {}", article.name(), e);
@@ -77,30 +77,37 @@ public class PostgresArticleRepository implements ArticleRepository {
 
   @Override
   public void delete(ArticleId articleId) {
-    String query = "DELETE FROM articles WHERE article_id = ?";
-    try (Connection connection = dataSource.getConnection();
-         PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setLong(1, articleId.value());
-      preparedStatement.executeUpdate();
-    } catch (SQLException e) {
-      logger.error("Error deleting article with ID: {}", articleId.value(), e);
+    Article article = findById(articleId);
+    if (article != null) {
+      int version = article.version();
+      executeWithOptimisticLocking(
+          "DELETE FROM articles WHERE article_id = ? AND version = ?",
+          ps -> {
+            ps.setLong(1, articleId.value());
+            ps.setInt(2, version);
+          },
+          "deleting article with ID: " + articleId.value()
+      );
+    } else {
+      throw new RuntimeException("Article not found");
     }
   }
 
+
   @Override
   public void update(Article article) {
-    String query = "UPDATE articles SET article_name = ?, tags = ?, number_of_comments = ?, trending = ? WHERE article_id = ?";
-    try (Connection connection = dataSource.getConnection();
-         PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-      preparedStatement.setString(1, article.name());
-      preparedStatement.setString(2, String.join(",", article.tags()));
-      preparedStatement.setInt(3, article.comments().size());
-      preparedStatement.setBoolean(4, article.comments().size() >= 3);
-      preparedStatement.setLong(5, article.id().value());
-      preparedStatement.executeUpdate();
-    } catch (SQLException e) {
-      logger.error("Error updating article: {}", article.name(), e);
-    }
+    executeWithOptimisticLocking(
+        "UPDATE articles SET article_name = ?, tags = ?, number_of_comments = ?, trending = ?, version = version + 1 WHERE article_id = ? AND version = ?",
+        ps -> {
+          ps.setString(1, article.name());
+          ps.setString(2, String.join(",", article.tags()));
+          ps.setInt(3, article.comments().size());
+          ps.setBoolean(4, article.comments().size() >= 3);
+          ps.setLong(5, article.id().value());
+          ps.setInt(6, article.version());
+        },
+        "updating article: " + article.name()
+    );
   }
 
   @Override
@@ -115,16 +122,16 @@ public class PostgresArticleRepository implements ArticleRepository {
         if (resultSet.next()) {
           int numberOfComments = resultSet.getInt("number_of_comments");
           int currentVersion = resultSet.getInt("version");
-          boolean trending = numberOfComments > 3;
-          try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-            updateStatement.setBoolean(1, trending);
-            updateStatement.setLong(2, articleId.value());
-            updateStatement.setInt(3, currentVersion);
-            int rowsUpdated = updateStatement.executeUpdate();
-            if (rowsUpdated == 0) {
-              throw new RuntimeException("Optimistic locking failed: Article was updated by another transaction.");
-            }
-          }
+          boolean trending = numberOfComments >= 3;
+          executeWithOptimisticLocking(
+              updateQuery,
+              ps -> {
+                ps.setBoolean(1, trending);
+                ps.setLong(2, articleId.value());
+                ps.setInt(3, currentVersion);
+              },
+              "updating trending for article with ID: " + articleId.value()
+          );
         }
         connection.commit();
       } catch (SQLException e) {
@@ -136,12 +143,25 @@ public class PostgresArticleRepository implements ArticleRepository {
     }
   }
 
+  private void executeWithOptimisticLocking(String query, ThrowingConsumer<PreparedStatement> preparer, String actionDescription) {
+    try (Connection connection = dataSource.getConnection();
+         PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+      preparer.accept(preparedStatement);
+      int rowsAffected = preparedStatement.executeUpdate();
+      if (rowsAffected == 0) {
+        throw new RuntimeException("Optimistic locking failed: " + actionDescription);
+      }
+    } catch (SQLException e) {
+      logger.error("Error " + actionDescription, e);
+    }
+  }
 
   private Article mapRowToArticle(ResultSet resultSet) throws SQLException {
     ArticleId id = new ArticleId(resultSet.getLong("article_id"));
     String name = resultSet.getString("article_name");
     LinkedHashSet<String> tags = new LinkedHashSet<>(Arrays.asList(resultSet.getString("tags").split(",")));
     List<Comment> comments = new ArrayList<>();
-    return new Article(id, name, tags, comments);
+    int version = resultSet.getInt("version");
+    return new Article(id, name, tags, comments, version);
   }
 }
