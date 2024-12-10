@@ -19,26 +19,22 @@ public class ArticleService {
     return articleRepository.findAll();
   }
 
-  // Ищет статью по ID
   public Optional<Article> findById(ArticleId articleId) {
     Article article = articleRepository.findById(articleId);
     return Optional.ofNullable(article);
   }
 
-  // Создаёт новую статью
   public Article create(String name, LinkedHashSet<String> tags) {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("Имя статьи не может быть пустым");
     }
     ArticleId articleId = articleRepository.generateArticleId();
     Article article = new Article(articleId, name, tags, List.of(), 0);
-
     try {
       articleRepository.save(article);
     } catch (Exception e) {
       throw new RuntimeException("Не удалось создать статью", e);
     }
-
     return article;
   }
 
@@ -47,7 +43,6 @@ public class ArticleService {
     if (article == null) {
       throw new NoSuchElementException("Не удалось найти статью с id=" + id);
     }
-
     Article updatedArticle = new Article(
         article.id(),
         name,
@@ -55,7 +50,6 @@ public class ArticleService {
         article.comments(),
         article.version()
     );
-
     try {
       articleRepository.update(updatedArticle);
     } catch (Exception e) {

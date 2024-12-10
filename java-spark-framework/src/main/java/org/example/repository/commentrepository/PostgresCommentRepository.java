@@ -17,14 +17,24 @@ public class PostgresCommentRepository implements CommentRepository {
   private static final Logger logger = LoggerFactory.getLogger(PostgresCommentRepository.class);
   private final DataSource dataSource;
   private final AtomicLong commentIDCounter = new AtomicLong();
+  private final boolean isTestMode;
 
-  public PostgresCommentRepository(DataSource dataSource) {
+  public PostgresCommentRepository(DataSource dataSource, boolean isTestMode) {
     this.dataSource = dataSource;
+    this.isTestMode = isTestMode;
+  }
+
+  private String modifyTableName(String sql) {
+    if (isTestMode && sql.contains("comments")) {
+      return sql.replace("comments", "comments_test");
+    }
+    return sql;
   }
 
   @Override
   public Comment findById(ArticleId articleId, CommentId commentId) {
     String query = "SELECT * FROM comments WHERE article_id = ? AND comment_id = ?";
+    query = modifyTableName(query);
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
       preparedStatement.setLong(1, articleId.value());
@@ -43,6 +53,7 @@ public class PostgresCommentRepository implements CommentRepository {
   public List<Comment> findAllByArticleId(ArticleId articleId) {
     List<Comment> comments = new ArrayList<>();
     String query = "SELECT * FROM comments WHERE article_id = ?";
+    query = modifyTableName(query);
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
       preparedStatement.setLong(1, articleId.value());
@@ -59,6 +70,7 @@ public class PostgresCommentRepository implements CommentRepository {
   @Override
   public void save(Comment comment) {
     String query = "INSERT INTO comments (article_id, text) VALUES (?, ?)";
+    query = modifyTableName(query);
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
       preparedStatement.setLong(1, comment.articleId().value());
@@ -73,6 +85,7 @@ public class PostgresCommentRepository implements CommentRepository {
   @Override
   public void delete(ArticleId articleId, CommentId commentId) {
     String query = "DELETE FROM comments WHERE article_id = ? AND comment_id = ?";
+    query = modifyTableName(query);
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
       preparedStatement.setLong(1, articleId.value());
@@ -87,6 +100,7 @@ public class PostgresCommentRepository implements CommentRepository {
   @Override
   public void update(Comment comment) {
     String query = "UPDATE comments SET text = ? WHERE article_id = ? AND comment_id = ?";
+    query = modifyTableName(query);
     try (Connection connection = dataSource.getConnection();
          PreparedStatement preparedStatement = connection.prepareStatement(query)) {
       preparedStatement.setString(1, comment.text());
@@ -117,7 +131,7 @@ public class PostgresCommentRepository implements CommentRepository {
       preparedStatement.setInt(1, delta);
       preparedStatement.setLong(2, articleId.value());
       preparedStatement.executeUpdate();
-      PostgresArticleRepository articleRepository = new PostgresArticleRepository(dataSource);
+      PostgresArticleRepository articleRepository = new PostgresArticleRepository(dataSource, false);
       articleRepository.updateTrending(articleId);
     } catch (SQLException e) {
       logger.error("Error updating comment count or trending for article ID: {}", articleId.value(), e);
