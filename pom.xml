@@ -39,7 +39,6 @@
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
-
                     <execution>
                         <id>report</id>
                         <phase>prepare-package</phase>
@@ -47,7 +46,6 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
-
                     <execution>
                         <id>jacoco-check</id>
                         <goals>
@@ -68,7 +66,6 @@
                             </rules>
                         </configuration>
                     </execution>
-
                     <execution>
                         <id>post-unit-test</id>
                         <phase>test</phase>
