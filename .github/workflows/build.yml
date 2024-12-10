@@ -23,4 +23,6 @@ jobs:
           distribution: 'temurin'
 
       - name: Build and Test with Maven
-        run: mvn clean verify jacoco:report jacoco:check
+        run: |
+          mvn clean verify -f ./path/to/your/project/pom.xml
+          mvn jacoco:report jacoco:check -f ./path/to/your/project/pom.xml
