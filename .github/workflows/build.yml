@@ -22,7 +22,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Check Maven version
+        run: mvn -version
+
       - name: Build and Test with Maven
-        run: |
-          mvn clean verify -f ./path/to/your/project/pom.xml
-          mvn jacoco:report jacoco:check -f ./path/to/your/project/pom.xml
+        run: mvn clean verify
