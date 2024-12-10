@@ -1,6 +1,11 @@
-package Homework.Sorts;
+package org.example;
 
-import java.util.*;
+import org.example.sorts.BubbleSort;
+import org.example.sorts.MergeSort;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 public class Main {
   public static void main(String[] args) {

@@ -1,16 +1,18 @@
-package Homework.tests;
+package org.example.sorts;
 
-import Homework.Sorts.BubbleSort;
-import Homework.Sorts.MergeSort;
 import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class BubbleSortTest {
+
   @Test
-  public void testBubbleSort() throws IllegalAccessException {
+  void testBubbleSort() throws IllegalAccessException {
     BubbleSort bubbleSort = new BubbleSort(50);
     List<Integer> expected = Arrays.asList(1, 2, 4, 6, 7, 8, 9, 10, 11, 13, 114);
     List<Integer> actual = Arrays.asList(13, 2, 7, 8, 1, 10, 6, 11, 114, 4, 9);
@@ -18,22 +20,22 @@ public class BubbleSortTest {
   }
 
   @Test
-  public void testBubbleSortLimits() {
+  void testBubbleSortLimits() {
     BubbleSort bubbleSort = new BubbleSort(2);
     List<Integer> actual = Arrays.asList(13, 2, 7, 8, 1, 10, 6, 11, 114, 4, 9);
     assertThrows(IllegalAccessException.class, () -> bubbleSort.sort(actual));
   }
 
   @Test
-  public void testEmptyBubbleSort() {
+  void testEmptyBubbleSort() {
     MergeSort mergeSort = new MergeSort();
-    List<Integer> expected = Arrays.asList();
-    List<Integer> actual = Arrays.asList();
+    List<Integer> expected = new ArrayList<>();
+    List<Integer> actual = new ArrayList<>();
     assertEquals(expected, mergeSort.sort(actual));
   }
 
   @Test
-  public void testNegativeBubbleSort() throws IllegalAccessException {
+  void testNegativeBubbleSort() throws IllegalAccessException {
     BubbleSort bubbleSort = new BubbleSort(50);
     List<Integer> expected = Arrays.asList(-100, -20, -14, -6, -3, 8, 9, 10, 11, 13, 114);
     List<Integer> actual = Arrays.asList(13, -20, -3, 8, -100, 10, -6, 11, 114, -14, 9);
@@ -41,18 +43,18 @@ public class BubbleSortTest {
   }
 
   @Test
-  public void testBubbleSortSingleElement() throws IllegalAccessException {
+  void testBubbleSortSingleElement() throws IllegalAccessException {
     BubbleSort bubbleSort = new BubbleSort(50);
-    List<Integer> expected = Arrays.asList(5);
-    List<Integer> actual = Arrays.asList(5);
+    List<Integer> expected = List.of(5);
+    List<Integer> actual = List.of(5);
     assertEquals(expected, bubbleSort.sort(actual));
   }
 
   @Test
-  public void testBubbleSort_ExceedMaxElements() {
+  void testBubbleSortExceedMaxElements() {
     BubbleSort bubbleSort = new BubbleSort(5);
     List<Integer> actual = Arrays.asList(1, 2, 3, 4, 5, 6);
     Exception exception = assertThrows(IllegalAccessException.class, () -> bubbleSort.sort(actual));
-    assertEquals("Превышено максимальное количество элементов (50)",exception.getMessage());
+    assertEquals("Превышено максимальное количество элементов (50)", exception.getMessage());
   }
 }

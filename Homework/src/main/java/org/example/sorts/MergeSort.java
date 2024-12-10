@@ -1,6 +1,7 @@
-package Homework.Sorts;
+package org.example.sorts;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 public class MergeSort {
   public List<Integer> sort(List<Integer> list) {
