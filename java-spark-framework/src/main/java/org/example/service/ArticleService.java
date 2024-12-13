@@ -30,7 +30,8 @@ public class ArticleService {
       throw new IllegalArgumentException("Имя статьи не может быть пустым");
     }
     ArticleId articleId = articleRepository.generateArticleId();
-    Article article = new Article(articleId, name, tags, List.of());
+    boolean trending = false;
+    Article article = new Article(articleId, name, tags, List.of(), 0, trending);
     try {
       articleRepository.save(article);
     } catch (Exception e) {
@@ -44,7 +45,15 @@ public class ArticleService {
     if (article == null) {
       throw new NoSuchElementException("Не удалось найти статью с id=" + id);
     }
-    Article updatedArticle = new Article(article.id(), name, tags, article.comments());
+    boolean trending = article.comments().size() >= 3;
+    Article updatedArticle = new Article(
+        article.id(),
+        name,
+        tags,
+        article.comments(),
+        article.version(),
+        trending
+    );
     try {
       articleRepository.update(updatedArticle);
     } catch (Exception e) {

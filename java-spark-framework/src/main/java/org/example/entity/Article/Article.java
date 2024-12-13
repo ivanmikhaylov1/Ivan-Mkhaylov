@@ -7,13 +7,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 
-public record Article(ArticleId id, String name, LinkedHashSet<String> tags, List<Comment> comments) {
-
-  public Article(ArticleId id, String name, LinkedHashSet<String> tags, List<Comment> comments) {
+public record Article(ArticleId id, String name, LinkedHashSet<String> tags, List<Comment> comments, int version, boolean trending) {
+  public Article(ArticleId id, String name, LinkedHashSet<String> tags, List<Comment> comments, int version, boolean trending) {
     this.id = id;
     this.name = name;
     this.tags = new LinkedHashSet<>(tags);
     this.comments = Collections.unmodifiableList(comments);
+    this.version = version;
+    this.trending = trending;
   }
 
   @Override
@@ -23,6 +24,8 @@ public record Article(ArticleId id, String name, LinkedHashSet<String> tags, Lis
         ", name='" + name + '\'' +
         ", tags=" + tags +
         ", comments=" + comments +
+        ", version=" + version +
+        ", trending=" + trending +
         '}';
   }
 
@@ -41,5 +44,9 @@ public record Article(ArticleId id, String name, LinkedHashSet<String> tags, Lis
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  public boolean isTrending() {
+    return trending;
   }
 }

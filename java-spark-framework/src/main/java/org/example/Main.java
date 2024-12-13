@@ -19,11 +19,11 @@ import java.util.List;
 
 public class Main {
   public static void main(String[] args) {
-    Service service = Service.ignite().port(1112);
+    Service service = Service.ignite().port(1111);
     DataSource dataSource = DataSourceConfig.getDataSource();
     ObjectMapper objectMapper = new ObjectMapper();
     PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource);
-    PostgresCommentRepository inMemoryCommentRepository = new PostgresCommentRepository(dataSource);
+    PostgresCommentRepository inMemoryCommentRepository = new PostgresCommentRepository(dataSource, false);
     ArticleService articleService = new ArticleService(postgresArticleRepository);
     CommentService commentService = new CommentService(inMemoryCommentRepository);
     Application application = new Application(

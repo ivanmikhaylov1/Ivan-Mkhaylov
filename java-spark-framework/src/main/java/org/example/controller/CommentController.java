@@ -143,7 +143,7 @@ public class CommentController implements Controller {
         response.status(400);
         return objectMapper.writeValueAsString(new ErrorResponse("Неверный формат ID комментария"));
       } catch (Exception e) {
-        LOG.error("Неожиданная ошибка при удалении комментария", e);
+        LOG.error("Ошибка при удалении комментария", e);
         response.status(500);
         return objectMapper.writeValueAsString(new ErrorResponse("Внутренняя ошибка сервера"));
       }
