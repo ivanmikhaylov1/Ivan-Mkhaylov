@@ -22,7 +22,7 @@ public class Main {
     Service service = Service.ignite().port(1111);
     DataSource dataSource = DataSourceConfig.getDataSource();
     ObjectMapper objectMapper = new ObjectMapper();
-    PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource, false);
+    PostgresArticleRepository postgresArticleRepository = new PostgresArticleRepository(dataSource);
     PostgresCommentRepository inMemoryCommentRepository = new PostgresCommentRepository(dataSource, false);
     ArticleService articleService = new ArticleService(postgresArticleRepository);
     CommentService commentService = new CommentService(inMemoryCommentRepository);

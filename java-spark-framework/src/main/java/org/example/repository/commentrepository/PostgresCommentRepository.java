@@ -131,7 +131,7 @@ public class PostgresCommentRepository implements CommentRepository {
       preparedStatement.setInt(1, delta);
       preparedStatement.setLong(2, articleId.value());
       preparedStatement.executeUpdate();
-      PostgresArticleRepository articleRepository = new PostgresArticleRepository(dataSource, false);
+      PostgresArticleRepository articleRepository = new PostgresArticleRepository(dataSource);
       articleRepository.updateTrending(articleId);
     } catch (SQLException e) {
       logger.error("Error updating comment count or trending for article ID: {}", articleId.value(), e);
