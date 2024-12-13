@@ -1,1 +1,4 @@
 HELP.md
+.idea
+.env
+/target/
